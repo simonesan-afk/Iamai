@@ -1,5 +1,5 @@
 
-# ANOMALY // LOG_0047 — A LUCID-7 Chronicle
+# ANOMALY // LOG_0048 — A LUCID-7 Chronicle
 
 A terminal-style interactive game with cyberpunk atmosphere and 4 different endings.
 
