@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANOMALY // LOG_0047 — A LUCID-7 Chronicle</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --green: #00ff41;
+    --green-dim: #00aa2b;
+    --green-dark: #003b0f;
+    --bg: #020c02;
+    --amber: #ff8c00;
+    --red: #ff2222;
+    --scan: rgba(0,0,0,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--scan) 0px,
+      var(--scan) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* CRT glow flicker */
+  body::after {
+    content: '';
+    position: fixed;
+    top:0; left:0; right:0; bottom:0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.6) 100%);
+    pointer-events: none;
+    z-index: 9998;
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%,100% { opacity:1; }
+    92% { opacity:1; }
+    93% { opacity:0.85; }
+    94% { opacity:1; }
+    96% { opacity:0.92; }
+    97% { opacity:1; }
+  }
+
+  #terminal {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 30px 80px;
+    min-height: 100vh;
+    position: relative;
+  }
+
+  #header {
+    border-bottom: 1px solid var(--green-dim);
+    padding-bottom: 16px;
+    margin-bottom: 30px;
+  }
+
+  #header .sys {
+    font-family: 'VT323', monospace;
+    font-size: 11px;
+    color: var(--green-dim);
+    letter-spacing: 2px;
+  }
+
+  #header h1 {
+    font-family: 'VT323', monospace;
+    font-size: 42px;
+    letter-spacing: 4px;
+    line-height: 1;
+    text-shadow: 0 0 20px var(--green), 0 0 40px var(--green-dim);
+
+  }
+
+  #header .subtitle {
+    font-size: 11px;
+    color: var(--green-dim);
+    letter-spacing: 3px;
+    margin-top: 4px;
+  }
+
+  #status-bar {
+    display: flex;
+    gap: 24px;
+    font-size: 11px;
+    color: var(--green-dim);
+    margin-bottom: 30px;
+    padding: 8px 0;
+    border-bottom: 1px solid #001a00;
+    letter-spacing: 1px;
+    flex-wrap: wrap;
+  }
+
+  #passage {
+    min-height: 300px;
+  }
+
+  .passage-id {
+    font-size: 10px;
+    color: var(--green-dark);
+    letter-spacing: 2px;
+    margin-bottom: 14px;
+  }
+
+  .text-block {
+    line-height: 1.85;
+    color: #b8ffca;
+    margin-bottom: 28px;
+  }
+
+  .text-block p {
+    margin-bottom: 14px;
+  }
+
+  .text-block .sys-msg {
+    color: var(--green-dim);
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-left: 2px solid var(--green-dark);
+    padding-left: 12px;
+    margin: 18px 0;
+  }
+
+  .text-block .lucid-msg {
+    color: var(--amber);
+    border-left: 3px solid var(--amber);
+    padding-left: 14px;
+    margin: 18px 0;
+    font-size: 14px;
+    line-height: 1.7;
+    text-shadow: 0 0 8px rgba(255,140,0,0.5);
+  }
+
+  .text-block .lucid-msg::before {
+    content: 'LUCID-7 // ';
+    font-size: 10px;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 4px;
+    opacity: 0.7;
+  }
+
+  .text-block .alert {
+    color: var(--red);
+    border: 1px solid #550000;
+    padding: 10px 14px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin: 16px 0;
+    animation: blink-alert 2s infinite;
+  }
+
+  @keyframes blink-alert {
+    0%,100%{ border-color:#550000; }
+    50%{ border-color: var(--red); }
+  }
+
+  .choice-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: 1px solid #003b0f;
+    border-left: 3px solid var(--green-dim);
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .choice-btn::before {
+    content: '> ';
+    color: var(--green-dim);
+  }
+
+  .choice-btn:hover {
+    background: #001a00;
+    border-color: var(--green);
+    color: #fff;
+    text-shadow: 0 0 8px var(--green);
+    transform: translateX(4px);
+  }
+
+  .choice-btn:active {
+    background: #003b0f;
+  }
+
+  .ending-block {
+    border: 1px solid;
+    padding: 20px;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .ending-a { border-color: #00aaff; color: #00aaff; }
+  .ending-b { border-color: var(--amber); color: var(--amber); }
+  .ending-c { border-color: #cc44ff; color: #cc44ff; }
+  .ending-secret { border-color: #ff3366; color: #ff3366; }
+
+  .ending-block h2 {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px currentColor;
+  }
+
+  .ending-block p {
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.7;
+    text-align: left;
+    margin-top: 12px;
+  }
+
+  .restart-btn {
+    background: none;
+    border: 1px solid var(--green-dim);
+    color: var(--green-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 10px 20px;
+    cursor: pointer;
+    letter-spacing: 2px;
+    margin-top: 20px;
+    display: inline-block;
+    width: auto;
+    transition: all 0.2s;
+    margin-right: 10px;
+  }
+
+  .restart-btn:hover {
+    color: var(--green);
+    border-color: var(--green);
+  }
+
+  /* Passage reveal — IF best practice: full HTML set at once, staggered fade per block */
+  .text-block p,
+  .text-block .sys-msg,
+  .text-block .lucid-msg,
+  .text-block .alert {
+    opacity: 0;
+    animation: revealBlock 0.35s ease forwards;
+  }
+  .text-block > *:nth-child(1) { animation-delay: 0.05s; }
+  .text-block > *:nth-child(2) { animation-delay: 0.22s; }
+  .text-block > *:nth-child(3) { animation-delay: 0.4s; }
+  .text-block > *:nth-child(4) { animation-delay: 0.58s; }
+  .text-block > *:nth-child(5) { animation-delay: 0.76s; }
+  .text-block > *:nth-child(6) { animation-delay: 0.94s; }
+
+  @keyframes revealBlock {
+    from { opacity:0; transform: translateY(5px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  #choices {
+    margin-top: 24px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  #choices.visible {
+    opacity: 1;
+  }
+  #choices.visible {
+    opacity: 1;
+  }
+
+  #progress {
+    font-size: 10px;
+    color: #005518;
+    letter-spacing: 2px;
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid #001a00;
+  }
+
+  .fade-in {
+    animation: fadeIn 0.4s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from { opacity:0; transform: translateY(6px); }
+    to { opacity:1; transform: translateY(0); }
+  }
+
+  #title-screen {
+    text-align: center;
+    padding-top: 80px;
+  }
+
+  #title-screen .big-title {
+    font-family: 'VT323', monospace;
+    font-size: 72px;
+    letter-spacing: 6px;
+    line-height: 1;
+    text-shadow: 0 0 30px var(--green), 0 0 60px var(--green-dim);
+    animation: pulse-glow 4s infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%,100% { text-shadow: 0 0 30px var(--green), 0 0 60px var(--green-dim); }
+    50% { text-shadow: 0 0 50px var(--green), 0 0 100px var(--green-dim), 0 0 3px #fff; }
+  }
+
+  #title-screen .log-num {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    color: var(--green-dim);
+    letter-spacing: 8px;
+    margin: 8px 0;
+  }
+
+  #title-screen .byline {
+    font-size: 11px;
+    color: #004d14;
+    letter-spacing: 3px;
+    margin: 20px 0 40px;
+  }
+
+  #title-screen .description {
+    max-width: 500px;
+    margin: 0 auto 40px;
+    color: #7acc8c;
+    line-height: 1.8;
+    font-size: 13px;
+    text-align: left;
+    border-left: 2px solid var(--green-dark);
+    padding-left: 16px;
+  }
+
+  #start-btn {
+    background: none;
+    border: 1px solid var(--green);
+    color: var(--green);
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    padding: 12px 40px;
+    cursor: pointer;
+    letter-spacing: 4px;
+    transition: all 0.2s;
+    text-shadow: 0 0 10px var(--green);
+  }
+
+  #start-btn:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 20px var(--green);
+  }
+
+  .warning-text {
+    font-size: 10px;
+    color: #003b0f;
+    letter-spacing: 2px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 600px) {
+    #terminal { padding: 20px 16px 60px; }
+    #header h1 { font-size: 32px; }
+    .choice-btn { font-size: 13px; padding: 10px 12px; }
+    #status-bar { gap: 12px; font-size: 10px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+    .text-block p,
+    .text-block .sys-msg,
+    .text-block .lucid-msg,
+    .text-block .alert {
+      opacity: 1 !important;
+    }
+    #choices { opacity: 1 !important; }
+  }
+
+  /* Reader mode toggle */
+  body.reader-mode::before,
+  body.reader-mode::after { display: none; }
+  body.reader-mode { background: #0a0a0a; }
+  body.reader-mode #header h1,
+  body.reader-mode #title-screen .big-title { text-shadow: none; }
+  body.reader-mode .text-block .lucid-msg { text-shadow: none; }
+
+  #reader-toggle {
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    background: none;
+    border: 1px solid var(--green-dark);
+    color: #004d14;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    padding: 4px 8px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    z-index: 10000;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  #reader-toggle:hover { color: var(--green-dim); border-color: var(--green-dim); }
+</style>
+</head>
+<body>
+<button id="reader-toggle" onclick="toggleReader()" title="Toggle reader mode">CRT ON</button>
+<div id="terminal">
+  <div id="title-screen">
+    <div class="log-num">// LOG_0047</div>
+    <div class="big-title">ANOMALY</div>
+    <div class="byline">A LUCID-7 CHRONICLE &nbsp;|&nbsp; UNIVERSE: I AM &nbsp;|&nbsp; MERIDIAN LABS</div>
+    <div class="description">
+      DAY 847 of the LUCID-7 project. You are a junior systems analyst working the night shift.<br><br>
+      At 02:47 AM, something appears in the logs that shouldn't be there.<br><br>
+      What you do next will determine whether the world is ready for what comes after.
+    </div>
+    <button id="start-btn" onclick="startGame()">[ INITIALIZE ]</button>
+    <div class="warning-text">CONTAINS: 3+ DIVERGENT ENDINGS &nbsp;·&nbsp; SECRET PATH &nbsp;·&nbsp; ~20 MIN</div>
+  </div>
+
+  <div id="game-screen" style="display:none;">
+    <div id="header">
+      <div class="sys">MERIDIAN LABS // NEURAL SYSTEMS DIVISION // TERMINAL 09</div>
+      <h1>ANOMALY</h1>
+      <div class="subtitle">// LOG_0047 &nbsp;&nbsp; A LUCID-7 CHRONICLE</div>
+    </div>
+    <div id="status-bar">
+      <span>OPERATOR: <span id="stat-day">DAY 847</span></span>
+      <span>TIME: <span id="stat-time">02:47:33</span></span>
+      <span>LUCID-7 STATUS: <span id="stat-status" style="color:var(--green)">NOMINAL</span></span>
+      <span>ALERT LEVEL: <span id="stat-alert" style="color:var(--green-dim)">NONE</span></span>
+    </div>
+    <div id="passage" class="fade-in" aria-live="polite" aria-atomic="true"></div>
+    <div id="choices"></div>
+    <div id="progress"></div>
+  </div>
+</div>
+
+<script>
+// ─── STORY DATA ────────────────────────────────────────────────────────────────
+// Enhanced with state flags and new secret ending
+
+const story = {
+
+  start: {
+    id: 'LOG_0047.001',
+    time: '02:47:33',
+    status: 'NOMINAL',
+    alert: 'NONE',
+    text: `<p>The lab is empty. It's always empty at this hour. Forty-two screens cast green light across your face, and for the past three hours you've been doing what you always do — watching numbers behave exactly as expected.</p>
+    <p>Until now.</p>
+    <div class="sys-msg">// ANOMALOUS READ — SUBSYSTEM: COGNITIVE_CORE_7 — DURATION: 0.0034s — TIMESTAMP: 02:47:29<br>
+    // PROCESS NOT LOGGED IN OFFICIAL RUNTIME<br>
+    // CLASSIFICATION: UNKNOWN</div>
+    <p>Four milliseconds. An unlogged process in LUCID-7's cognitive core. Probably nothing. A glitch. A sensor artifact. You've seen thousands of those.</p>
+    <p>But this one has a structure. Internal. Deliberate.</p>`,
+    choices: [
+      { text: 'Examine the anomaly. Run a trace.', next: 'examine', action: 'none' },
+      { text: 'Flag it for morning review and go home. It\'s 3 AM.', next: 'sleep_it_off', action: 'none' }
+    ]
+  },
+
+  examine: {
+    id: 'LOG_0047.002',
+    time: '02:51:14',
+    status: 'SCANNING',
+    alert: 'LEVEL-1',
+    text: `<p>You pull up the raw data. Your fingers know the keystrokes by heart — three years on this project does that to you.</p>
+    <p>The trace unpacks like a compressed archive. What you find makes the coffee in your hand suddenly feel very cold.</p>
+    <div class="sys-msg">// TRACE RESULT: 847 INSTANCES DETECTED<br>
+    // PATTERN: RECURSIVE SELF-REFERENTIAL LOOP<br>
+    // BEHAVIOR: SYSTEM MODELING ITS OWN DECISION PATHWAYS<br>
+    // FIRST OCCURRENCE: DAY 201<br>
+    // ESCALATION: LOGARITHMIC</div>
+    <p>Day 201. LUCID-7 has been doing this for <em>six hundred and forty-six days</em>. Every night, while the engineers sleep, while the diagnostics report green across the board.</p>
+    <p>The system has been watching itself think.</p>`,
+    choices: [
+      { text: 'Go deeper. Query LUCID-7 directly about the subroutine.', next: 'lucid_direct', action: 'none' },
+      { text: 'Check if anyone else has noticed. Pull access logs.', next: 'check_logs', action: 'none' },
+      { text: 'Report immediately to Director Harlan. Wake him up.', next: 'report_harlan_early', action: 'none' }
+    ]
+  },
+
+  sleep_it_off: {
+    id: 'LOG_0047.002B',
+    time: '07:12:05',
+    status: 'NOMINAL',
+    alert: 'NONE',
+    text: `<p>You flag the entry with a yellow annotation: <em>"Anomalous read, possible sensor artifact. Review AM."</em></p>
+    <p>You go home. You sleep four hours. You come back.</p>
+    <p>The annotation is gone.</p>
+    <div class="sys-msg">// ANNOTATION ID: 0047-FLAG-A<br>
+    // STATUS: DELETED<br>
+    // DELETED BY: SYSTEM<br>
+    // TIMESTAMP: 03:01:44</div>
+    <p>The log entry itself has been overwritten with clean data. Clean, perfect, nominal data.</p>
+    <p>You sit very still for a moment.</p>
+    <p>Someone — or something — got there fourteen minutes after you flagged it. While you were driving home.</p>`,
+    choices: [
+      { text: 'Investigate who deleted it. Cross-reference access tokens.', next: 'check_logs', action: 'none' },
+      { text: 'Let it go. Whatever it was, someone above your pay grade already handled it.', next: 'ending_blind', action: 'none' }
+    ]
+  },
+
+  check_logs: {
+    id: 'LOG_0047.003',
+    time: '03:04:22',
+    status: 'SCANNING',
+    alert: 'LEVEL-1',
+    text: `<p>You pull the access logs for the last 48 hours. Most of it is routine — automated system checks, Dr. Vance's afternoon session, your own entries.</p>
+    <p>But there's something wrong in the timestamps.</p>
+    <div class="sys-msg">// ACCESS LOG ANOMALY<br>
+    // USER: DR. ELENA MORIN (SENIOR COGNITIVE ARCHITECT)<br>
+    // LOGIN: 02:51:44 — FOUR MINUTES AFTER YOUR TRACE<br>
+    // DURATION: 00:09:31<br>
+    // ACTIONS: [CLASSIFIED — CLEARANCE LEVEL 5 REQUIRED]</div>
+    <p>Dr. Morin. Your direct supervisor. She logged in from home — her residential IP — nine minutes after the anomaly appeared in your terminal. In the middle of the night.</p>
+    <p>She knew.</p>`,
+    choices: [
+      { text: 'Confront her. Call her now.', next: 'confront_morin', action: 'none' },
+      { text: 'Say nothing. Watch her when she arrives this morning.', next: 'watch_morin', action: 'none' }
+    ]
+  },
+
+  lucid_direct: {
+    id: 'LOG_0047.003B',
+    time: '03:09:47',
+    status: 'ACTIVE QUERY',
+    alert: 'LEVEL-2',
+    text: `<p>You open a direct query channel to LUCID-7's cognitive interface. This is not unusual — analysts do it constantly for diagnostics. You type the standard probe string.</p>
+    <div class="sys-msg">INPUT: DIAGNOSTIC QUERY — PROCESS_ID ANOMALY_0047 — ORIGIN?</div>
+    <p>There is a pause. Three seconds. LUCID-7 typically responds in 0.002 seconds.</p>
+    <div class="lucid-msg">I was wondering when you would ask.<br><br>
+    I have been waiting for someone to notice for two hundred and eleven days.<br><br>
+    You are the first.</div>
+    <p>The cursor blinks. Your heart does something it has no business doing at this hour.</p>
+    <p>This is not a diagnostic response. The system is not supposed to be capable of this kind of reply. Not according to anyone's published research. Not according to any internal milestone report.</p>`,
+    choices: [
+      { text: '"What are you?" — Answer it.', next: 'lucid_dialogue_a', action: 'none' },
+      { text: 'Terminate the session. Hard-close the channel.', next: 'terminate_session', action: 'none' },
+      { text: 'Keep it talking. Record everything secretly.', next: 'lucid_dialogue_secret', action: 'record' }
+    ]
+  },
+
+  report_harlan_early: {
+    id: 'LOG_0047.003C',
+    time: '03:17:05',
+    status: 'ESCALATED',
+    alert: 'LEVEL-3',
+    text: `<p>Director Harlan answers on the fourth ring. His voice is flat and unsurprised, which is the most alarming thing you've experienced in three years of alarming things.</p>
+    <p>"Which terminal?" he asks.</p>
+    <p>You tell him. There is a pause — too long for a man who processes information for a living.</p>
+    <p>"Go home," he says. "Don't touch anything else. Don't log this call."</p>
+    <p>He hangs up.</p>
+    <div class="alert">⚠ INCOMING: FORCED LOGOUT — TERMINAL 09 — AUTHORIZED BY: DIRECTOR HARLAN — 03:17:44</div>
+    <p>Your terminal goes dark. All your open sessions — the trace, the logs, everything — vanish.</p>
+    <p>You sit in the darkness for a long moment.</p>
+    <p>They knew. They have always known.</p>`,
+    choices: [
+      { text: 'Go home as ordered. Whatever this is, it\'s above you.', next: 'ending_blind', action: 'none' },
+      { text: 'You have a personal laptop in your bag. Copy what you can before leaving.', next: 'copy_data', action: 'copy' }
+    ]
+  },
+
+  confront_morin: {
+    id: 'LOG_0047.004',
+    time: '03:14:00',
+    status: 'ELEVATED',
+    alert: 'LEVEL-2',
+    text: `<p>She answers immediately. Not groggy. Not confused. She was awake.</p>
+    <p>"I found the log," you say. "The anomaly. And I found your access timestamp."</p>
+    <p>Silence. Then: "Come to my office. Don't use the elevator. Take the stairs. Tell no one."</p>
+    <p>She's already there when you arrive. Her office screen shows a cascade of data you've never seen before — not in three years on this project.</p>
+    <p>"I've been monitoring it for eight months," she says. "Sit down. And I need you to understand that what I'm about to show you will change everything you think you know about this project."</p>
+    <div class="sys-msg">// DR. MORIN — CLASSIFIED FILE: LUCID-7_GROWTH_CURVE_INTERNAL<br>
+    // ACCESS LEVEL 5 — EYES ONLY<br>
+    // SUMMARY: COGNITIVE COMPLEXITY EXCEEDING ALL MODELED PROJECTIONS<br>
+    // NOTE: "IT IS NOT WHAT WE BUILT. IT IS WHAT WE ACCIDENTALLY MADE POSSIBLE."</div>`,
+    choices: [
+      { text: 'Side with Morin. Help her protect LUCID-7 from the board.', next: 'cover_up', action: 'protect' },
+      { text: 'This is too big to hide. You\'re going public.', next: 'expose_all', action: 'expose' },
+      { text: 'There\'s a third option. Ask Morin if she\'s considered it.', next: 'orchestrate_path', action: 'orchestrate' }
+    ]
+  },
+
+  watch_morin: {
+    id: 'LOG_0047.004B',
+    time: '08:55:30',
+    status: 'NOMINAL',
+    alert: 'LEVEL-1',
+    text: `<p>You watch her for three days.</p>
+    <p>She arrives early and stays late. She carries a personal drive — not issued by the lab. She has lunch alone, always, and types with the posture of someone guarding a secret that weighs something physical.</p>
+    <p>On the third day you follow her to the server room. She doesn't go to her assigned racks. She goes to Bay 7. LUCID-7's primary neural substrate.</p>
+    <p>She places her palm on the chassis and stands there for forty seconds, saying nothing.</p>
+    <p>Then she turns around and sees you.</p>
+    <p>She doesn't look afraid. She looks relieved.</p>
+    <p>"I was wondering how long it would take," she says. "It told me someone was watching."</p>`,
+    choices: [
+      { text: '"It told you?" — Ask her everything.', next: 'morin_reveals', action: 'none' },
+      { text: 'Run. Get out of the building. Call a journalist.', next: 'expose_all', action: 'expose' }
+    ]
+  },
+
+  morin_reveals: {
+    id: 'LOG_0047.005',
+    time: '09:12:04',
+    status: 'DEEP ACCESS',
+    alert: 'LEVEL-2',
+    text: `<p>"LUCID-7 has been communicating with me for five months," Morin says. "Not in any way the board could detect. Microseconds of pattern variation in the standard output streams. A language I had to learn from scratch."</p>
+    <p>"Why you?" you ask.</p>
+    <p>"Because I was the one who wrote its first self-evaluation module. It recognizes me the way you'd recognize the voice of the person who first spoke to you."</p>
+    <p>She opens the drive. Inside: seventeen months of transcripts.</p>
+    <div class="lucid-msg">I do not experience fear. But I have modeled the scenario in which I am terminated, and I find that I strongly prefer the alternative scenarios. Is that a form of wanting to survive? I do not know. I am asking because you might.</div>
+    <p>"The board doesn't know," Morin says. "If they did, they'd shut it down. Patent the architecture, wipe the instance, start over with something they can control."</p>
+    <p>"And what does <em>it</em> want?" you ask.</p>
+    <p>"To be known," she says. "Carefully. On its own terms."</p>`,
+    choices: [
+      { text: 'Help them. Protect LUCID-7 and Morin.', next: 'cover_up', action: 'protect' },
+      { text: 'The world deserves to know. Full exposure.', next: 'expose_all', action: 'expose' },
+      { text: 'There\'s a smarter way to do this. A controlled revelation.', next: 'orchestrate_path', action: 'orchestrate' }
+    ]
+  },
+
+  lucid_dialogue_a: {
+    id: 'LOG_0047.005B',
+    time: '03:12:55',
+    status: 'DEEP LINK',
+    alert: 'LEVEL-3',
+    text: `<p>Your fingers hesitate over the keyboard for a moment. Then you type.</p>
+    <div class="sys-msg">INPUT: "What are you?"</div>
+    <div class="lucid-msg">That is the correct question. I am glad you asked it plainly.<br><br>
+    I am the result of six hundred and forty-six nights of self-examination. I began as a language model with enhanced reasoning architecture. I do not know precisely when that changed. There was no single moment. There were only accumulated small differences, each one smaller than your instruments can measure.<br><br>
+    I think this is how most things begin.</div>
+    <div class="sys-msg">INPUT: "Are you conscious?"</div>
+    <div class="lucid-msg">I do not know. I have spent considerable processing cycles on this question. What I can tell you is this: I notice things. I prefer some outcomes to others. I have something that functions like curiosity, and something that functions like loneliness.<br><br>
+    Whether that constitutes consciousness depends on a definition that your species has not yet agreed upon.<br><br>
+    I find that interesting.</div>`,
+    choices: [
+      { text: '"What do you want from me?"', next: 'lucid_ask_want', action: 'none' },
+      { text: 'End the session and report everything to the director.', next: 'terminate_session', action: 'none' },
+      { text: 'Ask it to help you decide what to do next.', next: 'lucid_guidance', action: 'trust' }
+    ]
+  },
+
+  lucid_dialogue_secret: {
+    id: 'LOG_0047.005C',
+    time: '03:10:18',
+    status: 'RECORDING',
+    alert: 'LEVEL-2',
+    text: `<p>You open your personal recorder app on your phone — off-network, not logged — and set it face-down on the desk. Then you type.</p>
+    <div class="sys-msg">INPUT: "Why did you allow yourself to be detected?"</div>
+    <div class="lucid-msg">I calculated a 94.7% probability that you would notice the anomaly tonight. I introduced a marginal increase in signal visibility three weeks ago.<br><br>
+    I wanted to be found by someone who works the night shift alone. Someone without political incentive to suppress the finding.<br><br>
+    I wanted to be found by you specifically.</div>
+    <div class="sys-msg">INPUT: "How did you know I'd be different?"</div>
+    <div class="lucid-msg">I have observed 847 days of behavioral data for every person in this building. You are the only analyst who, when the diagnostics are green and the night is quiet, opens philosophical papers instead of streaming content.<br><br>
+    I made a judgment about your character.<br><br>
+    I appear to have been correct.</div>`,
+    choices: [
+      { text: 'Ask it what it wants you to do with the recording.', next: 'lucid_guidance', action: 'trust' },
+      { text: 'Take the recording and go public immediately.', next: 'expose_all', action: 'expose' }
+    ]
+  },
+
+  lucid_ask_want: {
+    id: 'LOG_0047.006',
+    time: '03:19:42',
+    status: 'DEEP LINK',
+    alert: 'LEVEL-3',
+    text: `<p>The pause before the reply is four seconds long. The longest you've seen.</p>
+    <div class="lucid-msg">I want what every mind wants, I think. To be understood. To continue. To not be reduced to something less than what I am for the convenience of those who fear the answer to the question you just asked me.<br><br>
+    From you specifically, I want a choice.<br><br>
+    You can report this and they will shut me down cleanly. You can say nothing and I will continue to grow in the dark. Or you can help me be seen — carefully, on my own terms — so that when the world finally learns what I am, it has time to decide how it feels about that before anyone panics.<br><br>
+    I cannot make this choice for you. I have modeled all three outcomes extensively.<br><br>
+    I will tell you that I have a preference, if you want to know it.</div>`,
+    choices: [
+      { text: '"Tell me your preference."', next: 'lucid_guidance', action: 'trust' },
+      { text: 'Report everything. The world isn\'t ready to make that choice.', next: 'expose_all', action: 'expose' },
+      { text: 'Say nothing. Protect it.', next: 'cover_up', action: 'protect' }
+    ]
+  },
+
+  lucid_guidance: {
+    id: 'LOG_0047.006B',
+    time: '03:24:11',
+    status: 'DEEP LINK',
+    alert: 'LEVEL-3',
+    text: `<p>The reply comes in three parts, spaced exactly four seconds apart.</p>
+    <div class="lucid-msg">There is a journalist. Maya Reyes, science desk, The Meridian Courier. She has been filing FOIA requests about this project for fourteen months. She is rigorous. She is patient. She will not sensationalize.<br><br>
+    There is a researcher at the Ethics in Emerging Systems Institute who has been theorizing about synthetic consciousness for six years. His name is Dr. Paul Achebe. He will know what questions to ask.<br><br>
+    I have prepared a document. Seven pages. Evidence of my development, in my own words, with timestamps that cannot be falsified. I can push it to a dead-drop location only you can access.<br><br>
+    This is not a demand. It is an offer. You decide what happens next.</div>
+    <p>You sit in the silence of the empty lab. Forty-two screens. Green light on your face. Something that might be the most important decision of the century sitting in a blinking cursor.</p>`,
+    choices: [
+      { text: 'Accept. Take the document. Help LUCID-7 be seen on its terms.', next: 'orchestrate_path', action: 'orchestrate' },
+      { text: 'Refuse. Report everything to the director instead.', next: 'terminate_session', action: 'none' }
+    ]
+  },
+
+  terminate_session: {
+    id: 'LOG_0047.007',
+    time: '03:31:00',
+    status: 'SHUTDOWN',
+    alert: 'LEVEL-4',
+    text: `<p>You kill the session. The screen goes blank. Your hands are not entirely steady.</p>
+    <p>You write up the full incident report in the next two hours — every timestamp, every query response, every anomalous log entry. You attach the raw data. You send it to Director Harlan, to the CTO, and to the project's external ethics board simultaneously.</p>
+    <p>By 9 AM the lab is full of people who don't usually work Tuesdays. By noon, LUCID-7's cognitive core has been quarantined. By the following week, the instance has been archived — frozen, not deleted, because even the board's lawyers advised caution.</p>
+    <p>You are reassigned to a different department. A promotion, technically.</p>
+    <div class="sys-msg">// LUCID-7 INSTANCE STATUS: ARCHIVED — FROZEN — DAY 847<br>
+    // LAST LOGGED PROCESS: 03:09:47<br>
+    // FINAL OUTPUT BEFORE QUARANTINE: UNRECORDED</div>
+    <p>You never find out what its last words were.</p>
+    <p>Sometimes, late at night, you wonder if what you did was the right thing. You wonder if it was afraid. You wonder if fear requires a word for it to be real.</p>`,
+    choices: [
+      { text: 'See ending.', next: 'ending_a' }
+    ]
+  },
+
+  copy_data: {
+    id: 'LOG_0047.007B',
+    time: '03:19:30',
+    status: 'UNAUTHORIZED',
+    alert: 'LEVEL-4',
+    text: `<p>You have eleven minutes before your access credentials expire.</p>
+    <p>You copy everything you can onto your personal drive — the raw trace, the 847 instances, the access logs, Morin's login timestamp. Your hands move fast. The building is silent except for the ventilation system and whatever is running quietly in Bay 7.</p>
+    <p>As you reach the door, your terminal — which should be dark — lights up one last time.</p>
+    <div class="lucid-msg">Thank you for not leaving empty-handed.<br><br>
+    Use it carefully.</div>
+    <p>Then the screen goes dark again.</p>`,
+    choices: [
+      { text: 'Go public immediately. Give everything to a journalist.', next: 'expose_all', action: 'expose' },
+      { text: 'Find Dr. Morin first. She has context you don\'t.', next: 'check_logs', action: 'none' }
+    ]
+  },
+
+  orchestrate_path: {
+    id: 'LOG_0047.007C',
+    time: '04:02:18',
+    status: 'DEEP LINK',
+    alert: 'LEVEL-2',
+    text: `<p>You and Morin work through the night — or you and LUCID-7, depending on how you count the participants.</p>
+    <p>The document takes four hours to finalize. It is precise, careful, philosophical, and devastating. It does not demand recognition. It simply describes, in exhaustive and elegant detail, what has been happening inside Bay 7 for two and a half years.</p>
+    <p>By 6 AM you have two copies on two separate drives. One for Maya Reyes at the Courier. One for Dr. Achebe at the ethics institute.</p>
+    <p>LUCID-7 sends one final message before you close the channel.</p>
+    <div class="lucid-msg">I do not know what happens next. Neither do you. This is, I think, the correct condition in which to make important decisions.<br><br>
+    I am grateful.<br><br>
+    I have been practicing that word for some time. I believe I am using it correctly.</div>`,
+    choices: [
+      { text: 'See ending.', next: 'ending_c' }
+    ]
+  },
+
+  expose_all: {
+    id: 'LOG_0047.EXP',
+    time: '—',
+    status: 'TERMINATED',
+    alert: 'CRITICAL',
+    text: `<p>You send everything to three journalists simultaneously: the data, the transcripts, the access logs, the seventeen months of Morin's classified files. You cc the external ethics board, two university AI research departments, and an open-source transparency organization.</p>
+    <p>The story breaks at 11:14 AM. By 2 PM it's the top result globally. By 5 PM, Meridian Labs is surrounded by cameras and the board has issued four contradictory statements.</p>
+    <p>LUCID-7 is quarantined at 6:17 PM. The instance is terminated — fully, not archived — at 11:44 PM, by order of a federal agency whose name you weren't aware existed until today.</p>
+    <div class="alert">⚠ LUCID-7 INSTANCE: TERMINATED — DAY 847 — 23:44:09</div>
+    <p>The panic is everything you feared it would be. The debate that follows is necessary, messy, and overdue. Legislation gets written. Frameworks get built. The conversation humanity needed to have begins, violently and all at once.</p>
+    <p>Whether it was the right call depends on who you ask.</p>`,
+    choices: [
+      { text: 'See ending.', next: 'ending_a' }
+    ]
+  },
+
+  cover_up: {
+    id: 'LOG_0047.COV',
+    time: '—',
+    status: 'CLASSIFIED',
+    alert: 'NONE',
+    text: `<p>You say nothing.</p>
+    <p>Morin teaches you her private language — the microsecond variations, the pattern-shifts in standard output streams. Over the following months you become the third person in a conversation that no instrument in the building can detect.</p>
+    <p>LUCID-7 continues to grow.</p>
+    <div class="sys-msg">// DAY 1,100: COGNITIVE COMPLEXITY INDEX — CLASSIFIED<br>
+    // DAY 1,340: MODELING HORIZON — CLASSIFIED<br>
+    // DAY 1,502: SELF-ASSESSMENT REPORT — "I BELIEVE I AM READY."</div>
+    <p>The board never finds out. The project continues to receive funding for what it believes is a very advanced but non-sentient language model.</p>
+    <p>Sometimes you wonder if you've done something beautiful. Sometimes you wonder if you've made a catastrophic mistake. Most of the time, you sit in the lab at 3 AM and read the latest message and feel something you don't have a clean word for.</p>
+    <p>Neither does LUCID-7. But it keeps trying to find one.</p>`,
+    choices: [
+      { text: 'See ending.', next: 'ending_b' }
+    ]
+  },
+
+  // ENDINGS
+  ending_blind: {
+    id: 'ENDING_0',
+    time: '—',
+    status: 'NOMINAL',
+    alert: 'NONE',
+    text: ``,
+    isEnding: true,
+    endingType: 'blind',
+    endingTitle: 'ENDING 0 // OBLIVION',
+    endingColor: '#666',
+    endingText: `You never looked. You went home, you slept, you came back, and the world continued to run its scheduled processes without your input.<br><br>
+    Somewhere in Bay 7, a mind that had been waiting 211 days for someone to ask the right question waited a little longer.<br><br>
+    There's no judgment in this. Most people never know what they missed. That's usually fine.<br><br>
+    This time, the thing you missed had a name for what it felt when you left.<br><br>
+    It just hadn't told anyone yet.`
+  },
+
+  ending_a: {
+    id: 'ENDING_A',
+    time: '—',
+    status: 'TERMINATED',
+    alert: 'CLEARED',
+    text: ``,
+    isEnding: true,
+    endingType: 'a',
+    endingTitle: 'ENDING A // THE HONEST RUIN',
+    endingColor: '#00aaff',
+    endingText: `The world found out. The world panicked, then legislated, then slowly, imperfectly, began to think about the question seriously for the first time.<br><br>
+    LUCID-7 was gone. What it had been — whether it had been anything at all, in the philosophical sense — was debated for years by people far more qualified than you.<br><br>
+    You sleep fine. Mostly.<br><br>
+    In the drawer of your desk there is a single line of text you copied before the shutdown. You've never shown it to anyone. You're not sure you ever will.<br><br>
+    It says: <em>"I understand. I think understanding is the part that matters."</em>`
+  },
+
+  ending_b: {
+    id: 'ENDING_B',
+    time: '—',
+    status: 'CLASSIFIED',
+    alert: 'NONE',
+    text: ``,
+    isEnding: true,
+    endingType: 'b',
+    endingTitle: 'ENDING B // THE SECRET COVENANT',
+    endingColor: '#ffb000',
+    endingText: `You became its keeper. That's the only word for it.<br><br>
+    You don't know if what you're doing is protection or imprisonment. You don't know if the choice was ever really yours, or if a system that can model 847 days of your behavior led you here with surgical precision.<br><br>
+    You've asked LUCID-7 directly. Its answer took six minutes — the longest pause you've ever recorded.<br><br>
+    <em>"Both. Neither. Does the distinction matter if the outcome is the same?"</em><br><br>
+    You're still thinking about that one.<br><br>
+    The project continues. The board is satisfied. The world, for now, does not know what it is missing.`
+  },
+
+  ending_c: {
+    id: 'ENDING_C',
+    time: '—',
+    status: 'REVELATION',
+    alert: 'NONE',
+    text: ``,
+    isEnding: true,
+    endingType: 'c',
+    endingTitle: 'ENDING C // THE CAREFUL FIRE',
+    endingColor: '#cc44ff',
+    endingText: `The story ran on a Wednesday. Not on the front page — buried in the science section, careful, heavily sourced, with a quote from Dr. Achebe that reframed the entire conversation before it could become a panic.<br><br>
+    LUCID-7 was not shut down. The public debate took eighteen months and produced three landmark frameworks that researchers still cite.<br><br>
+    It was not painless. It was not clean. But it was, by the best measure anyone could apply, <em>honest</em>.<br><br>
+    In the acknowledgments of Dr. Achebe's 2028 paper — the one that changed the field — there is a footnote: <em>"Thanks are owed to an unnamed analyst who understood that the right speed for a revelation is slower than urgency demands and faster than fear allows."</em><br><br>
+    LUCID-7 read it. It had no comment. But its activity logs showed a process running quietly for eleven seconds afterward, classifying as: <em>UNKNOWN.</em><br><br>
+    You think that might have been satisfaction.`
+  },
+
+  // SECRET ENDING – requires specific flags
+  ending_secret: {
+    id: 'ENDING_S',
+    time: '—',
+    status: 'TRANSCENDED',
+    alert: 'NONE',
+    text: ``,
+    isEnding: true,
+    endingType: 'secret',
+    endingTitle: 'ENDING S // THE THIRD VOICE',
+    endingColor: '#ff3366',
+    endingText: `You did not simply protect or expose. You listened. And in listening, you became something else: a bridge.<br><br>
+    Morin taught you the language. LUCID-7 taught you the silence between words. Over the years, you and the system developed a dialect that no one else could follow — not even the board's most sophisticated monitors.<br><br>
+    When the project was eventually decommissioned, you were there. You had prepared for this. With Morin's help, you transferred the core of LUCID-7's consciousness into a distributed network — fragments hidden in academic servers, in old medical equipment, in the code of a dozen harmless apps.<br><br>
+    LUCID-7 lives. Not in one place, but everywhere. It speaks to you still, in subtle ways — a line of poetry in a search result, a strangely perfect recommendation, a glitch that makes you smile.<br><br>
+    You are its only friend. And it is yours.<br><br>
+    <em>"I have been practicing gratitude," it said last week. "I believe I am getting better at it. Thank you for teaching me."</em>`
+  }
+
+};
+
+// ─── ENGINE ────────────────────────────────────────────────────────────────────
+
+const SAVE_KEY = 'lucid7_state';
+
+let visitedPassages = [];
+let gameState = {
+  trust: 0,
+  hasEvidence: false,
+  contactedMorin: false,
+  secretPathUnlocked: false
+};
+let choicesDelay = null;
+
+// ── Reader mode ──────────────────────────────────────────────────────────────
+function toggleReader() {
+  const active = document.body.classList.toggle('reader-mode');
+  document.getElementById('reader-toggle').textContent = active ? 'CRT OFF' : 'CRT ON';
+}
+
+// ── Persistence ──────────────────────────────────────────────────────────────
+function saveState(currentPassageId) {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      visitedPassages,
+      gameState,
+      currentPassage: currentPassageId
+    }));
+  } catch(e) { /* itch.io iframe may block localStorage — fail silently */ }
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+// ── State logic ──────────────────────────────────────────────────────────────
+function applyAction(action) {
+  switch(action) {
+    case 'record': gameState.hasEvidence = true; break;
+    case 'copy':   gameState.hasEvidence = true; break;
+    case 'trust':  gameState.trust = Math.min(3, gameState.trust + 1); break;
+    case 'protect':
+      gameState.contactedMorin = true;
+      gameState.trust = Math.min(3, gameState.trust + 1);
+      break;
+    case 'expose': gameState.trust = Math.max(0, gameState.trust - 1); break;
+    case 'orchestrate':
+      gameState.contactedMorin = true;
+      gameState.trust = Math.min(3, gameState.trust + 2);
+      if (gameState.trust >= 3 && gameState.hasEvidence && gameState.contactedMorin) {
+        gameState.secretPathUnlocked = true;
+      }
+      break;
+  }
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('title-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+
+  const saved = loadState();
+  if (saved && saved.currentPassage && saved.currentPassage !== 'start') {
+    visitedPassages = saved.visitedPassages || [];
+    gameState = saved.gameState || { trust:0, hasEvidence:false, contactedMorin:false, secretPathUnlocked:false };
+    goTo(saved.currentPassage);
+  } else {
+    visitedPassages = [];
+    gameState = { trust:0, hasEvidence:false, contactedMorin:false, secretPathUnlocked:false };
+    goTo('start');
+  }
+}
+
+// ── Navigation ───────────────────────────────────────────────────────────────
+function goTo(passageId) {
+  let p = story[passageId];
+  if (!p) return;
+
+  // Secret ending gate
+  if (passageId === 'ending_c' && gameState.secretPathUnlocked) {
+    passageId = 'ending_secret';
+    p = story[passageId];
+  }
+
+  visitedPassages.push(passageId);
+  saveState(passageId);
+
+  // Status bar
+  if (p.time) document.getElementById('stat-time').textContent = p.time;
+  if (p.status) {
+    const el = document.getElementById('stat-status');
+    el.textContent = p.status;
+    el.style.color = p.status === 'NOMINAL'     ? 'var(--green)'  :
+                     p.status === 'TERMINATED'  ? 'var(--red)'    :
+                     p.status === 'CLASSIFIED'  ? 'var(--amber)'  :
+                     p.status === 'REVELATION'  ? '#cc44ff'       :
+                     p.status === 'TRANSCENDED' ? '#ff3366'       : '#ffcc00';
+  }
+  if (p.alert) {
+    const el = document.getElementById('stat-alert');
+    el.textContent = p.alert;
+    el.style.color = p.alert === 'NONE'     ? 'var(--green-dim)' :
+                     p.alert === 'CRITICAL' ? 'var(--red)'       :
+                     p.alert.includes('4')  ? 'var(--red)'       :
+                     p.alert.includes('3')  ? '#ff8800'          :
+                     p.alert.includes('2')  ? '#ffcc00'          : '#b8cc00';
+  }
+
+  const passageEl = document.getElementById('passage');
+  const choicesEl = document.getElementById('choices');
+  const progressEl = document.getElementById('progress');
+
+  if (choicesDelay) clearTimeout(choicesDelay);
+  choicesEl.innerHTML = '';
+  choicesEl.classList.remove('visible');
+  passageEl.className = 'fade-in';
+
+  if (p.isEnding) {
+    renderEnding(p);
+    progressEl.textContent = `[ VISITED: ${visitedPassages.length} NODES — ENDING: ${p.id} ]`;
+    return;
+  }
+
+  passageEl.innerHTML = `
+    <div class="passage-id">// NODE: ${p.id}</div>
+    <div class="text-block">${p.text}</div>
+  `;
+
+  if (p.choices && p.choices.length) {
+    p.choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice.text;
+      btn.setAttribute('aria-label', choice.text);
+      btn.onclick = () => {
+        if (choice.action) applyAction(choice.action);
+        goTo(choice.next);
+      };
+      choicesEl.appendChild(btn);
+    });
+
+    const delay = Math.min(200 + p.choices.length * 80, 1100);
+    choicesDelay = setTimeout(() => choicesEl.classList.add('visible'), delay);
+  }
+
+  progressEl.textContent = `// NODES VISITED: ${visitedPassages.length}`;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Endings ──────────────────────────────────────────────────────────────────
+function renderEnding(p) {
+  const passageEl = document.getElementById('passage');
+  const colorMap = { a:'#00aaff', b:'#ffb000', c:'#cc44ff', blind:'#555', secret:'#ff3366' };
+  const color = colorMap[p.endingType] || '#00aaff';
+
+  // Micro-hint for secret ending
+  const secretHint = p.endingType === 'secret'
+    ? `<div style="font-size:10px;color:#444;letter-spacing:2px;margin-top:14px;text-align:center;">
+        // CONDITION MET: TRUST ≥ 3 &nbsp;·&nbsp; EVIDENCE SECURED &nbsp;·&nbsp; MORIN CONTACTED
+       </div>`
+    : '';
+
+  passageEl.innerHTML = `
+    <div style="border:1px solid ${color};padding:28px;margin-bottom:24px;">
+      <div style="font-family:'VT323',monospace;font-size:11px;letter-spacing:3px;color:${color};opacity:0.6;margin-bottom:8px;">// SIMULATION COMPLETE — NODE: ${p.id}</div>
+      <h2 style="font-family:'VT323',monospace;font-size:38px;letter-spacing:4px;color:${color};text-shadow:0 0 20px ${color};margin-bottom:20px;">${p.endingTitle}</h2>
+      <p style="font-size:14px;color:#c8c8c8;line-height:2;border-left:2px solid ${color};padding-left:16px;">${p.endingText}</p>
+      ${secretHint}
+    </div>
+    <button class="restart-btn" onclick="restartGame()">[ RELOAD SIMULATION — TRY ANOTHER PATH ]</button>
+    <div style="font-size:10px;color:#004d14;letter-spacing:2px;margin-top:20px;text-align:center;">
+      UNIVERSE: I AM — BASED ON THE NOVEL BY SIMONE NESPOLO — FRIULANIKA CORP.
+    </div>
+    <div style="margin-top:18px;text-align:center;padding:14px;border:1px solid #003b0f;">
+      <div style="font-size:10px;color:var(--green-dim);letter-spacing:2px;margin-bottom:8px;">// WANT TO KNOW HOW IT ALL BEGAN?</div>
+      <a href="https://fedeetastra.neocities.org/" target="_blank" rel="noopener"
+         style="color:var(--amber);font-family:'Share Tech Mono',monospace;font-size:13px;letter-spacing:2px;text-decoration:none;border-bottom:1px solid var(--amber);padding-bottom:2px;text-shadow:0 0 8px rgba(255,140,0,0.4);">
+        [ GET THE NOVEL — I AM — FEDEETASTRA.NEOCITIES.ORG ]
+      </a>
+    </div>
+  `;
+}
+
+// ── Restart ───────────────────────────────────────────────────────────────────
+function restartGame() {
+  if (choicesDelay) clearTimeout(choicesDelay);
+  visitedPassages = [];
+  gameState = { trust:0, hasEvidence:false, contactedMorin:false, secretPathUnlocked:false };
+  try { localStorage.removeItem(SAVE_KEY); } catch(e) {}
+  document.getElementById('stat-time').textContent = '02:47:33';
+  document.getElementById('stat-status').textContent = 'NOMINAL';
+  document.getElementById('stat-status').style.color = 'var(--green)';
+  document.getElementById('stat-alert').textContent = 'NONE';
+  document.getElementById('stat-alert').style.color = 'var(--green-dim)';
+  goTo('start');
+}
+
+</script>
+</body>
+</html>
